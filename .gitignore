@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# Cloudflare & Node
+node_modules/
+.wrangler/
+dist/
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+*.log
+.env
+.dev.vars

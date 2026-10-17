@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宏观与核心资产监控看板 | Macro & Asset Monitor</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="alternate icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <!-- ECharts 本地静态库 -->
+    <script src="/static/js/echarts.min.js"></script>
+</head>
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- 顶部导航与状态栏 -->
+        <header class="top-header">
+            <div class="header-left">
+                <div class="logo-box">
+                    <div class="logo-pulse"></div>
+                    <span class="logo-icon">▲</span>
+                </div>
+                <div>
+                    <h1 class="app-title">MACRO MONITOR <span class="badge-tag">MVP v1.1</span></h1>
+                    <p class="app-subtitle">全球宏观与核心资产监控看板 · 标普500 · 纳指100 · 罗素2000 · 10Y美债 · WTI原油 · 黄金 · 比特币 · 美元/人民币</p>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="status-indicator">
+                    <span class="pulse-dot"></span>
+                    <span class="status-text" id="system-status">服务运行中</span>
+                </div>
+                <div class="refresh-pill">
+                    <span class="countdown-text" id="countdown-label">自动刷新: 60s</span>
+                </div>
+                <div class="update-time" id="last-update-time">最后更新: 载入中...</div>
+                <button class="btn btn-primary" id="btn-manual-refresh">
+                    <span class="btn-icon" id="refresh-icon">↻</span>
+                    <span>立即刷新</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- 核心指标卡片区域 (8 大核心资产) -->
+        <section class="section-cards">
+            <div class="cards-grid" id="cards-container">
+                <!-- 动态渲染 8 张资产指标卡 -->
+                <div class="metric-card skeleton-card"></div>
+                <div class="metric-card skeleton-card"></div>
+                <div class="metric-card skeleton-card"></div>
+                <div class="metric-card skeleton-card"></div>
+                <div class="metric-card skeleton-card"></div>
+                <div class="metric-card skeleton-card"></div>
+                <div class="metric-card skeleton-card"></div>
+                <div class="metric-card skeleton-card"></div>
+            </div>
+        </section>
+
+        <!-- 主图表分析面板 -->
+        <section class="section-main-chart">
+            <div class="panel-card">
+                <!-- 图表控制与标签栏 -->
+                <div class="chart-header">
+                    <div class="view-tabs">
+                        <button class="tab-btn active" data-view="single">单资产深度研判</button>
+                        <button class="tab-btn" data-view="macro">跨资产联动对比 (基准 0%)</button>
+                    </div>
+
+                    <!-- 单资产模式专用控制 -->
+                    <div class="chart-controls" id="single-controls">
+                        <!-- 资产切换 (8大资产按序排列) -->
+                        <div class="btn-group asset-group" id="asset-selector">
+                            <button class="btn btn-sm btn-chip active" data-ticker="^GSPC">标普 500</button>
+                            <button class="btn btn-sm btn-chip" data-ticker="^NDX">纳指 100</button>
+                            <button class="btn btn-sm btn-chip" data-ticker="^RUT">罗素 2000</button>
+                            <button class="btn btn-sm btn-chip" data-ticker="^TNX">10Y 美债</button>
+                            <button class="btn btn-sm btn-chip" data-ticker="CL=F">WTI 原油</button>
+                            <button class="btn btn-sm btn-chip" data-ticker="GC=F">COMEX 黄金</button>
+                            <button class="btn btn-sm btn-chip" data-ticker="BTC-USD">比特币</button>
+                            <button class="btn btn-sm btn-chip" data-ticker="USDCNY=X">美元/人民币</button>
+                        </div>
+
+                        <!-- 图表类型切换 -->
+                        <div class="btn-group" id="chart-type-selector">
+                            <button class="btn btn-sm btn-outline active" data-type="line">折线走势</button>
+                            <button class="btn btn-sm btn-outline" data-type="candlestick">K线蜡烛</button>
+                        </div>
+
+                        <!-- 均线与指标开关 -->
+                        <div class="indicator-toggles">
+                            <label class="toggle-label">
+                                <input type="checkbox" id="toggle-ma" checked>
+                                <span>MA均线(5/20)</span>
+                            </label>
+                            <label class="toggle-label">
+                                <input type="checkbox" id="toggle-volume" checked>
+                                <span>成交量</span>
+                            </label>
+                        </div>
+
+                        <!-- 周期切换 -->
+                        <div class="btn-group period-group" id="period-selector">
+                            <button class="btn btn-sm btn-period" data-period="1D">1D</button>
+                            <button class="btn btn-sm btn-period" data-period="5D">5D</button>
+                            <button class="btn btn-sm btn-period active" data-period="1M">1M</button>
+                            <button class="btn btn-sm btn-period" data-period="6M">6M</button>
+                            <button class="btn btn-sm btn-period" data-period="1Y">1Y</button>
+                        </div>
+                    </div>
+
+                    <!-- 跨资产对比模式专用控制 -->
+                    <div class="chart-controls hidden" id="macro-controls">
+                        <span class="control-hint">各资产以起点为 100% 归一化计算涨跌幅对比：</span>
+                        <div class="btn-group period-group" id="macro-period-selector">
+                            <button class="btn btn-sm btn-period" data-period="1D">1D</button>
+                            <button class="btn btn-sm btn-period" data-period="5D">5D</button>
+                            <button class="btn btn-sm btn-period active" data-period="1M">1M</button>
+                            <button class="btn btn-sm btn-period" data-period="6M">6M</button>
+                            <button class="btn btn-sm btn-period" data-period="1Y">1Y</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 图表容器 -->
+                <div class="chart-canvas-wrapper">
+                    <div id="main-echart" class="echarts-box"></div>
+                    <div id="chart-loading" class="chart-loading-overlay">
+                        <div class="spinner"></div>
+                        <span class="loading-text">正在从本地数据引擎拉取行情...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 宏观资产配置与数据矩阵 -->
+        <section class="section-matrix">
+            <div class="panel-card">
+                <div class="matrix-header">
+                    <h3 class="panel-title">宏观资产研判与核心属性矩阵</h3>
+                    <span class="panel-info">数据源：Yahoo Finance 本地缓存引擎（纯本地计算与渲染）</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="macro-table" id="matrix-table">
+                        <thead>
+                            <tr>
+                                <th>资产代码</th>
+                                <th>名称 / 类别</th>
+                                <th>最新价格 / 收益率</th>
+                                <th>日内涨跌</th>
+                                <th>日内波动范围 (Low - High)</th>
+                                <th>52周波动区间</th>
+                                <th>宏观角色定位</th>
+                            </tr>
+                        </thead>
+                        <tbody id="matrix-tbody">
+                            <tr><td colspan="7" class="text-center">正在加载矩阵数据...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 底部信息 -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <span>MACRO & ASSET MONITORING SYSTEM · LOCAL MVP</span>
+                <span>后端架构: FastAPI + yfinance · 前端架构: ECharts + 原生深色科技 UI</span>
+                <span class="status-badge">本地监听: http://127.0.0.1:8000</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 业务主逻辑脚本 -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
